@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({Key? key}) : super(key: key);
@@ -8,6 +9,15 @@ class ContactsScreen extends StatefulWidget {
 }
 
 class _ContactsScreenState extends State<ContactsScreen> {
+  List<Contact>? _contacts;
+  bool _permissionDenied = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchContacts();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,18 +45,36 @@ class _ContactsScreenState extends State<ContactsScreen> {
           style: TextStyle(color: Colors.white, fontSize: 24.0),
         ),
       ),
-      body: ListView.builder(
-        itemBuilder: contactBox,
-        itemCount: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      ),
+      body: _permissionDenied
+          ? const Center(
+              child: Text(
+                'Contacts permission is required',
+                style: TextStyle(
+                  fontSize: 12.0,
+                  color: Colors.white,
+                ),
+              ),
+            )
+          : _contacts == null
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                )
+              : ListView.builder(
+                  itemBuilder: contactBox,
+                  itemCount: _contacts!.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                ),
       backgroundColor: const Color(0xFF496d60),
     );
   }
 
   Widget contactBox(BuildContext context, int index) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        // check if number is in voicess database
+      },
       child: Column(
         children: [
           Row(
@@ -69,14 +97,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   const SizedBox(width: 10.0),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
-                        'Username',
-                        style: TextStyle(color: Colors.white, fontSize: 17.0),
+                        _contacts![index].displayName,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 17.0),
                       ),
                       Text(
-                        '+245712345678',
-                        style: TextStyle(color: Colors.white54, fontSize: 12.0),
+                        _contacts![index].phones.isNotEmpty
+                            ? _contacts![index].phones.first.number
+                            : "No number",
+                        style: const TextStyle(
+                            color: Colors.white54, fontSize: 12.0),
                       ),
                     ],
                   ),
@@ -101,5 +133,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
         ],
       ),
     );
+  }
+
+  Future _fetchContacts() async {
+    if (!await FlutterContacts.requestPermission(readonly: true)) {
+      setState(() => _permissionDenied = true);
+    } else {
+      final contacts = await FlutterContacts.getContacts(withProperties: true);
+      setState(() => _contacts = contacts);
+    }
   }
 }
