@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "967670248348",
+    "project_id": "voicess-a12b3",
+    "storage_bucket": "voicess-a12b3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967670248348:android:5aaf91cab21b5fee2f8e59",
+        "android_client_info": {
+          "package_name": "com.example.voicess"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "967670248348-vipg7oo40el9ct6gdf49k21q9pjbbms9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDQ8cgdsRzYP-eqneS57ly_A6ED9ulbzk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "967670248348-vipg7oo40el9ct6gdf49k21q9pjbbms9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "967670248348-c0e1tfimcabivklgv2uqm29s1eu40ipq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.voicess"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
