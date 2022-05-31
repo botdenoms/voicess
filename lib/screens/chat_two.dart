@@ -246,21 +246,17 @@ class _ChatTwoState extends State<ChatTwo> {
                                   ),
                                 ),
                                 onTap: () async {
-                                  // await playerController
-                                  //     .preparePlayer(_pathUrl!);
-                                  if (_pathUrl == null) {
-                                    // ignore: avoid_print
-                                    print("null url path");
-                                  }
                                   // toggle playing state of recording made
                                   if (isPlaying &&
                                       playerController.playerState ==
                                           PlayerState.playing) {
                                     await playerController.pausePlayer();
                                     isPlaying = false;
+                                    setState(() {});
                                   } else {
                                     await playerController.startPlayer(true);
                                     isPlaying = true;
+                                    setState(() {});
                                   }
                                   // setState(() {
                                   //   isPlaying = !isPlaying;
