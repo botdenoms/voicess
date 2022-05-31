@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audio_waveforms/audio_waveforms.dart';
 
 class ChatScreen extends StatefulWidget {
   final String withWho;
@@ -10,6 +11,40 @@ class ChatScreen extends StatefulWidget {
 
 class _OptionsScreenState extends State<ChatScreen> {
   bool recordSheet = false;
+  bool _finishedRecording = false;
+  bool _startedRecording = false;
+  bool _playingRecording = false;
+  bool pausedRecording = false;
+  String? _pathUrl;
+
+  late final RecorderController recorderController;
+  late final PlayerController playerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _initControllers();
+  }
+
+  @override
+  void dispose() {
+    recorderController.disposeFunc();
+    playerController.disposeFunc();
+    super.dispose();
+  }
+
+  _initControllers() {
+    recorderController = RecorderController()
+      ..androidEncoder = AndroidEncoder.aac
+      ..androidOutputFormat = AndroidOutputFormat.mpeg4
+      ..iosEncoder = IosEncoder.kAudioFormatMPEG4AAC
+      ..sampleRate = 16000;
+    playerController = PlayerController()
+      ..addListener(() {
+        if (mounted) setState(() {});
+      });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,12 +77,21 @@ class _OptionsScreenState extends State<ChatScreen> {
           itemBuilder: chatBox,
           itemCount: 7,
         ),
-        onTap: () {
+        onTap: () async {
           if (recordSheet == false) {
             return;
           }
+          if (playerController.playerState == PlayerState.playing) {
+            // stop playing
+            await playerController.stopPlayer();
+          }
+          await recorderController.stop();
           setState(() {
             recordSheet = !recordSheet;
+            _startedRecording = false;
+            pausedRecording = false;
+            _finishedRecording = false;
+            _playingRecording = false;
           });
         },
       ),
@@ -75,6 +119,7 @@ class _OptionsScreenState extends State<ChatScreen> {
   }
 
   Widget recordSheetWidget(BuildContext context) {
+    Size screen = MediaQuery.of(context).size;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
@@ -84,33 +129,57 @@ class _OptionsScreenState extends State<ChatScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  height: 48.0,
-                  width: 48.0,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.play_arrow_rounded,
-                    color: Color(0xFF496d60),
+              Opacity(
+                opacity: _finishedRecording ? 1.0 : 0.0,
+                child: GestureDetector(
+                  onTap: () async {},
+                  child: Container(
+                    height: 48.0,
+                    width: 48.0,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _playingRecording
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      color: const Color(0xFF496d60),
+                    ),
                   ),
                 ),
               ),
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  height: 48.0,
-                  width: 48.0,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.star_border_rounded,
-                    color: Color(0xFF496d60),
+              _finishedRecording
+                  ? AudioFileWaveforms(
+                      size: Size(screen.width * .5, 50),
+                      playerController: playerController,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: const BoxDecoration(),
+                    )
+                  : AudioWaveforms(
+                      size: Size(screen.width * .5, 50),
+                      recorderController: recorderController,
+                      enableGesture: true,
+                      waveStyle: const WaveStyle(
+                        waveColor: Colors.white,
+                        showMiddleLine: false,
+                      ),
+                    ),
+              Opacity(
+                opacity: _finishedRecording ? 1.0 : 0.0,
+                child: GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    height: 48.0,
+                    width: 48.0,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.star_border_rounded,
+                      color: Color(0xFF496d60),
+                    ),
                   ),
                 ),
               ),
@@ -125,38 +194,39 @@ class _OptionsScreenState extends State<ChatScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  height: 48.0,
-                  width: 48.0,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.stop_rounded,
-                    color: Color(0xFF496d60),
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  height: 48.0,
-                  width: 48.0,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.circle_rounded,
-                    color: Color(0xFF496d60),
+              Opacity(
+                opacity: _startedRecording ? 1.0 : 0.0,
+                child: GestureDetector(
+                  onTap: () async {},
+                  child: Container(
+                    height: 48.0,
+                    width: 48.0,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _finishedRecording
+                          ? Icons.delete_outline
+                          : Icons.stop_rounded,
+                      color: const Color(0xFF496d60),
+                    ),
                   ),
                 ),
               ),
               GestureDetector(
-                onTap: () {},
+                onTap: () async {
+                  //start recording if not paused else resume
+                  if (recorderController.isRecording) {
+                    await recorderController.pause();
+                    pausedRecording = true;
+                    setState(() {});
+                  }
+                  await recorderController.record();
+                  _startedRecording = true;
+                  pausedRecording = false;
+                  setState(() {});
+                },
                 child: Container(
                   height: 48.0,
                   width: 48.0,
@@ -164,9 +234,31 @@ class _OptionsScreenState extends State<ChatScreen> {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.mic_off_rounded,
-                    color: Color(0xFF496d60),
+                  child: Icon(
+                    pausedRecording || !_startedRecording
+                        ? Icons.circle_rounded
+                        : Icons.pause_rounded,
+                    color: const Color(0xFF496d60),
+                  ),
+                ),
+              ),
+              Opacity(
+                opacity: _startedRecording ? 1.0 : 0.0,
+                child: GestureDetector(
+                  onTap: () async {},
+                  child: Container(
+                    height: 48.0,
+                    width: 48.0,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _finishedRecording
+                          ? Icons.send_rounded
+                          : Icons.mic_off_rounded,
+                      color: const Color(0xFF496d60),
+                    ),
                   ),
                 ),
               ),
@@ -187,7 +279,7 @@ class _OptionsScreenState extends State<ChatScreen> {
           ? const EdgeInsets.only(right: 20.0, bottom: 5.0)
           : const EdgeInsets.only(left: 20.0, bottom: 5.0),
       decoration: const BoxDecoration(
-        color: Color(0xFF496d60),
+        color: Color(0xAA496D60),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
